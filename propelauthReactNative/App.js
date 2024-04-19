@@ -24,37 +24,37 @@ export default function App() {
   const discoveryDocument = getDiscoveryDocument();
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-        clientId: process.env.EXPO_PUBLIC_CLIENT_ID ?? '',
-        redirectUri: AuthSession.makeRedirectUri(),
-        usePKCE: true,
+      clientId: process.env.EXPO_PUBLIC_CLIENT_ID ?? '',
+      redirectUri: AuthSession.makeRedirectUri(),
+      usePKCE: true,
     },
     discoveryDocument,
-);
+  );
 
   useEffect(() => {
     if (response?.type === 'success' && response.params.code && request?.codeVerifier) {
-        const getToken = async () => {
-            const exchangeTokenResponse = await AuthSession.exchangeCodeAsync(
-                {
-                    clientId: process.env.EXPO_PUBLIC_CLIENT_ID ?? '',
-                    code: response.params.code,
-                    redirectUri: process.env.EXPO_PUBLIC_REDIRECT_URI,
-                    extraParams: {
-                        code_verifier: request.codeVerifier ?? '',
-                    },
-                },
-                discoveryDocument,
-            );
-            console.log(exchangeTokenResponse)
-            save('access_token', exchangeTokenResponse.accessToken);
-            save('refresh_token', exchangeTokenResponse.refreshToken);
-        };
-        getToken();
+      const getToken = async () => {
+        const exchangeTokenResponse = await AuthSession.exchangeCodeAsync(
+          {
+            clientId: process.env.EXPO_PUBLIC_CLIENT_ID ?? '',
+            code: response.params.code,
+            redirectUri: process.env.EXPO_PUBLIC_REDIRECT_URI,
+            extraParams: {
+              code_verifier: request.codeVerifier ?? '',
+            },
+          },
+          discoveryDocument,
+        );
+        console.log(exchangeTokenResponse)
+        save('access_token', exchangeTokenResponse.accessToken);
+        save('refresh_token', exchangeTokenResponse.refreshToken);
+      };
+      getToken();
     }
-}, [response]);
+  }, [response]);
 
 
-  
+
 
   const fetchUserData = async () => {
     try {
@@ -63,12 +63,30 @@ export default function App() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       };
-      const response = await axios.get(`${process.env.EXPO_PUBLIC_BASE_AUTH_URL}/propelauth/oauth/userinfo`, {headers:headers});
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BASE_AUTH_URL}/propelauth/oauth/userinfo`, { headers: headers });
       console.log(response.data)
     } catch (error) {
       console.error('Error fetching data:', error);
     }
   };
+
+  const logoutUser = async () => {
+    try {
+      const refresh_token = await getValueFor('refresh_token')
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      const body = {
+        "refresh_token": refresh_token
+      }
+      const response = await axios.post(`http://192.168.86.29:4000/`, body, { headers: headers }
+      );
+      console.log(response.data)
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
 
 
   return (
@@ -77,6 +95,7 @@ export default function App() {
       <StatusBar style="auto" />
       <Button disabled={!request} title="Login" onPress={() => promptAsync()} />
       <Button title="Get User Data" onPress={() => fetchUserData()} />
+      <Button title="Logout" onPress={() => logoutUser()} />
     </View>
   );
 }
