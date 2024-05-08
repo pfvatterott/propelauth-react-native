@@ -5,6 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as AuthSession from 'expo-auth-session';
 import { getDiscoveryDocument } from './DiscoveryDocument';
 import { useEffect } from 'react';
+import { refresh } from 'react-native-app-auth';
 
 export default function App() {
 
@@ -54,6 +55,26 @@ export default function App() {
   }, [response]);
 
 
+  const refreshToken = async () => {
+    try {
+      const refresh_token = await getValueFor('refresh_token')
+      
+      const refreshResponse = await AuthSession.refreshAsync(
+        {
+          clientId: process.env.EXPO_PUBLIC_CLIENT_ID,
+          clientSecret: process.env.EXPO_PUBLIC_CLIENT_SECRET,
+          refreshToken: refresh_token
+        },
+        discoveryDocument
+      )
+      console.log(refreshResponse)
+      save('refresh_token', refreshResponse.refresh_token);
+      save('access_token', refreshResponse.accessToken.access_token);
+    } catch (error) {
+      console.log("Error in refreshing Token: ", error)
+    }
+    
+  }
 
 
   const fetchUserData = async () => {
@@ -79,7 +100,7 @@ export default function App() {
       const body = {
         "refresh_token": refresh_token
       }
-      const response = await axios.post(`http://192.168.86.29:4000/`, body, { headers: headers }
+      const response = await axios.post(`http://192.168.86.94:8081/`, body, { headers: headers }
       );
       console.log(response.data)
     } catch (error) {
@@ -95,6 +116,7 @@ export default function App() {
       <StatusBar style="auto" />
       <Button disabled={!request} title="Login" onPress={() => promptAsync()} />
       <Button title="Get User Data" onPress={() => fetchUserData()} />
+      <Button title="Refresh Token" onPress={() => refreshToken()} />
       <Button title="Logout" onPress={() => logoutUser()} />
     </View>
   );
